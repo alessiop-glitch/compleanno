@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Festa di Compleanno Alessio - 4 Ottobre 🎉</title>
+    <title>Festa di Compleanno Alessio - 3 Ottobre 🎉</title>
 
     <!-- Google Fonts & FontAwesome -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -363,7 +363,14 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .date-note {
+            font-size: 0.9rem;
+            color: var(--text-muted);
             margin-bottom: 20px;
+            font-style: italic;
         }
 
         /* COUNTDOWN ANIMATO */
@@ -849,7 +856,10 @@
             </div>
             <h1>Il Mio Compleanno!</h1>
             <div class="date-tag">
-                <i class="fa-regular fa-calendar-days"></i> Sabato, 4 Ottobre
+                <i class="fa-regular fa-calendar-days"></i> Sabato, 3 Ottobre
+            </div>
+            <div class="date-note">
+                (Festeggiamo il giorno prima perché il 4 è domenica!)
             </div>
 
             <!-- COUNTDOWN -->
@@ -876,7 +886,7 @@
         <!-- PROGRAMMA FESTA -->
         <div class="glass-card">
             <div class="section-title">Programma della Serata</div>
-            <div class="section-desc">Ecco come festeggeremo insieme il 4 ottobre!</div>
+            <div class="section-desc">Ecco come festeggeremo insieme il 3 ottobre!</div>
 
             <!-- TAPPA 1: PIZZA -->
             <div class="program-step">
@@ -970,7 +980,7 @@
             <div class="success-box" id="successMsg">
                 <i class="fa-solid fa-circle-check" style="font-size: 2.2rem; color: var(--yes-color); margin-bottom: 8px;"></i>
                 <h3 style="font-size: 1.3rem; font-weight:800;">Risposta Registrata!</h3>
-                <p style="font-size: 0.95rem; margin-top: 4px; color: #d1d5db; margin-bottom: 15px;">Grazie per aver risposto! Ci vediamo il 4 ottobre 🎉</p>
+                <p style="font-size: 0.95rem; margin-top: 4px; color: #d1d5db; margin-bottom: 15px;">Grazie per aver risposto! Ci vediamo il 3 ottobre 🎉</p>
 
                 <!-- MOSTRATO ANCHE DOPO L'INVIO PER FACILITÀ D'ACCESSO -->
                 <a href="pizza.html" class="btn-pizza-link">
@@ -1154,14 +1164,14 @@
         }
         const db = firebase.database();
 
-        // --- 6. CONTO ALLA ROVESCIA (4 OTT) ---
+        // --- 6. CONTO ALLA ROVESCIA (3 OTT) ---
         function updateCountdown() {
             const now = new Date();
             let targetYear = now.getFullYear();
-            let targetDate = new Date(`October 4, ${targetYear} 19:30:00`);
+            let targetDate = new Date(`October 3, ${targetYear} 19:30:00`);
 
             if (now > targetDate) {
-                targetDate = new Date(`October 4, ${targetYear + 1} 19:30:00`);
+                targetDate = new Date(`October 3, ${targetYear + 1} 19:30:00`);
             }
 
             const diff = targetDate - now;
