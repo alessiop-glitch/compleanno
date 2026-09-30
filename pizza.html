@@ -606,10 +606,11 @@
 
     </div>
 
-    <script>
+<script>
         let soundEnabled = true;
         const soundToggle = document.getElementById('soundToggle');
         const soundIcon = document.getElementById('soundIcon');
+        const SHEETDB_URL = 'https://sheetdb.io/api/v1/ntp2nvx6rlhww';
 
         function updateSoundIcon() {
             if (soundEnabled) {
@@ -708,33 +709,36 @@
             }
         });
 
-        // FIREBASE
-        const firebaseConfig = { databaseURL: "https://birthday-4october-default-rtdb.europe-west1.firebasedatabase.app" };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        // ESCLUSIONE NOMI GIA SELEZIONATI PER LA PIZZA
+        // GESTIONE DATI CON SHEETDB
         const nameSelect = document.getElementById('nameSelect');
-        const pizzaOrdersRef = db.ref('pizzas');
 
-        pizzaOrdersRef.on('value', (snapshot) => {
-            const data = snapshot.val() || {};
-            const takenNames = Object.keys(data);
+        async function fetchPizzaData() {
+            try {
+                const response = await fetch(SHEETDB_URL);
+                const data = await response.json();
+                
+                // Crea una mappa/elenco dei nomi già registrati nel foglio
+                const takenNames = data.map(row => row.name || row.Nome || row.chi_sei);
 
-            Array.from(nameSelect.options).forEach(option => {
-                if (!option.value) return;
-                if (takenNames.includes(option.value)) {
-                    option.textContent = `${option.value} (Pizza già scelta)`;
-                    option.disabled = true;
-                } else {
-                    option.textContent = option.value;
-                    option.disabled = false;
-                }
-            });
+                Array.from(nameSelect.options).forEach(option => {
+                    if (!option.value) return;
+                    if (takenNames.includes(option.value)) {
+                        option.textContent = `${option.value} (Pizza già scelta)`;
+                        option.disabled = true;
+                    } else {
+                        option.textContent = option.value;
+                        option.disabled = false;
+                    }
+                });
 
-            updatePizzaSummary(data);
-        });
+                updatePizzaSummary(data);
+            } catch (error) {
+                console.error("Errore nel recupero dati da SheetDB:", error);
+            }
+        }
 
+        // Carica i dati all'avvio
+        fetchPizzaData();
         nameSelect.addEventListener('change', () => playPopSound(659.25));
 
         // SALVATAGGIO SCELTA PIZZA
@@ -742,7 +746,7 @@
         const submitBtn = document.getElementById('submitBtn');
         const successMsg = document.getElementById('successMsg');
 
-        pizzaForm.addEventListener('submit', (e) => {
+        pizzaForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const selectedName = nameSelect.value;
             let pizzaGusto = pizzaSelect.value;
@@ -765,20 +769,41 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvataggio...';
 
-            pizzaOrdersRef.child(selectedName).set({
-                pizza: pizzaGusto,
-                notes: notes,
-                timestamp: new Date().toISOString()
-            }).then(() => {
-                playPopSound(1046.50);
-                confetti({ particleCount: 160, spread: 100, origin: { y: 0.5 } });
-                pizzaForm.style.display = 'none';
-                successMsg.style.display = 'block';
-            }).catch(() => {
+            const payload = {
+                data: [
+                    {
+                        name: selectedName,
+                        pizza: pizzaGusto,
+                        notes: notes,
+                        timestamp: new Date().toISOString()
+                    }
+                ]
+            };
+
+            try {
+                const response = await fetch(SHEETDB_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    playPopSound(1046.50);
+                    confetti({ particleCount: 160, spread: 100, origin: { y: 0.5 } });
+                    pizzaForm.style.display = 'none';
+                    successMsg.style.display = 'block';
+                    fetchPizzaData(); // Aggiorna la lista e disabilita il nome
+                } else {
+                    throw new Error("Errore nella risposta del server");
+                }
+            } catch (error) {
                 alert("Errore durante il salvataggio!");
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> Conferma Scelta Pizza';
-            });
+            }
         });
 
         // AREA RISERVATA ALESSIO
@@ -797,6 +822,7 @@
                 isAdminUnlocked = true;
                 adminPanel.style.display = 'block';
                 toggleAdminBtn.innerHTML = '<i class="fa-solid fa-unlock"></i> Riepilogo Pizze (Sbloccato)';
+                fetchPizzaData();
             } else if (pass !== null) {
                 alert("Password errata!");
             }
@@ -805,24 +831,27 @@
         function updatePizzaSummary(data) {
             const pizzaListContainer = document.getElementById('pizzaListContainer');
             pizzaListContainer.innerHTML = '';
-            const entries = Object.entries(data);
-
-            if (entries.length === 0) {
+            
+            if (!data || data.length === 0) {
                 pizzaListContainer.innerHTML = '<li style="text-align:center; font-size:0.85rem; color:#888;">Nessun gusto scelto finora.</li>';
                 return;
             }
 
-            entries.forEach(([name, info]) => {
+            data.forEach((row) => {
+                const name = row.name || row.Nome || row.chi_sei || 'Ospite';
+                const pizza = row.pizza || row.Pizza || 'Non specificata';
+                const notes = row.notes || row.Note || '';
+
                 const li = document.createElement('li');
                 li.className = 'pizza-item';
                 li.innerHTML = `
-          <div style="display:flex; flex-direction:column;">
-            <span style="font-weight:700; color:#fff;">${name}</span>
-            <span style="font-size:0.9rem; color:var(--accent-gold); font-weight:800;">${info.pizza}</span>
-            ${info.notes ? `<span style="font-size:0.85rem; color:var(--text-muted); font-style:italic;">Note: "${info.notes}"</span>` : ''}
-          </div>
-          <i class="fa-solid fa-pizza-slice" style="color:var(--accent-gold); font-size:1.3rem;"></i>
-        `;
+                  <div style="display:flex; flex-direction:column;">
+                    <span style="font-weight:700; color:#fff;">${name}</span>
+                    <span style="font-size:0.9rem; color:var(--accent-gold); font-weight:800;">${pizza}</span>
+                    ${notes ? `<span style="font-size:0.85rem; color:var(--text-muted); font-style:italic;">Note: "${notes}"</span>` : ''}
+                  </div>
+                  <i class="fa-solid fa-pizza-slice" style="color:var(--accent-gold); font-size:1.3rem;"></i>
+                `;
                 pizzaListContainer.appendChild(li);
             });
         }
