@@ -1023,8 +1023,8 @@
 
     </div>
 
-<script>
-    const SHEETDB_RSVP_URL = 'https://sheetdb.io/api/v1/qznw5h720gixk';
+    <script>
+        const SHEETDB_RSVP_URL = 'https://sheetdb.io/api/v1/qznw5h720gixk';
         // --- 1. GESTIONE ENTRATA ED ESPLOSIONE INIZIALE ---
         const introScreen = document.getElementById('introScreen');
         const openInviteBtn = document.getElementById('openInviteBtn');
@@ -1158,14 +1158,13 @@
         updateCountdown();
 
         // --- 6. GESTIONE SHEETDB PER RSVP ---
-        const SHEETDB_RSVP_URL = 'https://sheetdb.io/api/v1/9nym2wqzf0rbf';
         const nameSelect = document.getElementById('nameSelect');
 
         async function fetchRsvps() {
             try {
                 const response = await fetch(SHEETDB_RSVP_URL);
                 const data = await response.json();
-                
+
                 // Estrae i nomi già registrati nel foglio (controlla le varie varianti di intestazione)
                 const takenNames = data.map(row => row.name || row.Name || row.NOME || row.nome);
 
