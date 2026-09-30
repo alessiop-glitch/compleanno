@@ -1034,6 +1034,11 @@
             playPopSound(880);
             confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
             introScreen.classList.add('fade-out');
+            
+            // Rimuove completamente la schermata dopo l'animazione per sbloccare i click
+            setTimeout(() => {
+                introScreen.style.display = 'none';
+            }, 800);
         }
 
         openInviteBtn.addEventListener('click', triggerEntrance);
@@ -1165,7 +1170,6 @@
                 const response = await fetch(SHEETDB_RSVP_URL);
                 const data = await response.json();
 
-                // Estrae i nomi già registrati nel foglio (controlla le varie varianti di intestazione)
                 const takenNames = data.map(row => row.name || row.Name || row.NOME || row.nome);
 
                 Array.from(nameSelect.options).forEach(option => {
@@ -1185,7 +1189,6 @@
             }
         }
 
-        // Carica i dati all'avvio
         fetchRsvps();
         nameSelect.addEventListener('change', () => playPopSound(659.25));
 
@@ -1235,7 +1238,7 @@
                     confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
                     rsvpForm.style.display = 'none';
                     successMsg.style.display = 'block';
-                    fetchRsvps(); // Aggiorna la lista e disabilita il nome scelto
+                    fetchRsvps();
                 } else {
                     throw new Error("Errore nella risposta del server");
                 }
