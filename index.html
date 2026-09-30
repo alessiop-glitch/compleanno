@@ -1023,7 +1023,8 @@
 
     </div>
 
-    <script>
+<script>
+    const SHEETDB_RSVP_URL = 'https://sheetdb.io/api/v1/9nym2wqzf0rbf';
         // --- 1. GESTIONE ENTRATA ED ESPLOSIONE INIZIALE ---
         const introScreen = document.getElementById('introScreen');
         const openInviteBtn = document.getElementById('openInviteBtn');
@@ -1031,15 +1032,7 @@
 
         function triggerEntrance() {
             playPopSound(880);
-
-            // Lancio coriandoli
-            confetti({
-                particleCount: 120,
-                spread: 80,
-                origin: { y: 0.5 }
-            });
-
-            // Sfuma lo schermo di intro
+            confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
             introScreen.classList.add('fade-out');
         }
 
@@ -1081,21 +1074,16 @@
             }
         }
 
-        for (let i = 0; i < 45; i++) {
-            particles.push(new Particle());
-        }
+        for (let i = 0; i < 45; i++) particles.push(new Particle());
 
         function animateParticles() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
+            particles.forEach(p => { p.update(); p.draw(); });
             requestAnimationFrame(animateParticles);
         }
         animateParticles();
 
-        // --- 3. AUDIO SYNTH SOUND EFFECTS (WEB AUDIO API) ---
+        // --- 3. AUDIO SYNTH SOUND EFFECTS ---
         let soundEnabled = false;
         const soundToggle = document.getElementById('soundToggle');
         const soundIcon = document.getElementById('soundIcon');
@@ -1105,7 +1093,7 @@
             if (soundEnabled) {
                 soundIcon.className = 'fa-solid fa-volume-high';
                 soundToggle.style.borderColor = 'var(--accent-pink)';
-                playPopSound(587.33); // D5 Note
+                playPopSound(587.33);
             } else {
                 soundIcon.className = 'fa-solid fa-volume-xmark';
                 soundToggle.style.borderColor = 'rgba(255,255,255,0.2)';
@@ -1131,14 +1119,9 @@
             } catch (e) { }
         }
 
-        // CLICK SUL REGALO 3D INTERNO
         document.getElementById('giftBoxTrigger').addEventListener('click', () => {
             playPopSound(880);
-            confetti({
-                particleCount: 100,
-                spread: 90,
-                origin: { y: 0.4 }
-            });
+            confetti({ particleCount: 100, spread: 90, origin: { y: 0.4 } });
         });
 
         // --- 4. NAVIGAZIONE MAPPE ---
@@ -1146,7 +1129,6 @@
             playPopSound(523.25);
             const address = "Via Aquileia, 53, 33050 Percoto UD";
             const isAppleDevice = /Mac|iPhone|iPod|iPad/.test(navigator.userAgent);
-
             if (isAppleDevice) {
                 window.open(`maps://maps.apple.com/?q=${encodeURIComponent(address)}`, '_blank');
             } else {
@@ -1154,26 +1136,12 @@
             }
         }
 
-        // --- 5. CONFIGURAZIONE FIREBASE ---
-        const firebaseConfig = {
-            databaseURL: "https://birthday-4october-default-rtdb.europe-west1.firebasedatabase.app"
-        };
-
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const db = firebase.database();
-
-        // --- 6. CONTO ALLA ROVESCIA (3 OTT) ---
+        // --- 5. CONTO ALLA ROVESCIA (3 OTT) ---
         function updateCountdown() {
             const now = new Date();
             let targetYear = now.getFullYear();
             let targetDate = new Date(`October 3, ${targetYear} 19:30:00`);
-
-            if (now > targetDate) {
-                targetDate = new Date(`October 3, ${targetYear + 1} 19:30:00`);
-            }
-
+            if (now > targetDate) targetDate = new Date(`October 3, ${targetYear + 1} 19:30:00`);
             const diff = targetDate - now;
 
             const d = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -1186,42 +1154,48 @@
             document.getElementById('minutes').innerText = String(m).padStart(2, '0');
             document.getElementById('seconds').innerText = String(s).padStart(2, '0');
         }
-
         setInterval(updateCountdown, 1000);
         updateCountdown();
 
-        // --- 7. GESTIONE SELEZIONE ED ESCLUSIONE NOMI ---
+        // --- 6. GESTIONE SHEETDB PER RSVP ---
+        const SHEETDB_RSVP_URL = 'https://sheetdb.io/api/v1/9nym2wqzf0rbf';
         const nameSelect = document.getElementById('nameSelect');
-        const rsvpsRef = db.ref('rsvps');
 
-        rsvpsRef.on('value', (snapshot) => {
-            const data = snapshot.val() || {};
-            const takenNames = Object.keys(data);
+        async function fetchRsvps() {
+            try {
+                const response = await fetch(SHEETDB_RSVP_URL);
+                const data = await response.json();
+                
+                // Estrae i nomi già registrati nel foglio (controlla le varie varianti di intestazione)
+                const takenNames = data.map(row => row.name || row.Name || row.NOME || row.nome);
 
-            Array.from(nameSelect.options).forEach(option => {
-                if (!option.value) return;
+                Array.from(nameSelect.options).forEach(option => {
+                    if (!option.value) return;
+                    if (takenNames.includes(option.value)) {
+                        option.textContent = `${option.value} (Già risposto)`;
+                        option.disabled = true;
+                    } else {
+                        option.textContent = option.value;
+                        option.disabled = false;
+                    }
+                });
 
-                if (takenNames.includes(option.value)) {
-                    option.textContent = `${option.value} (Già risposto)`;
-                    option.disabled = true;
-                } else {
-                    option.textContent = option.value;
-                    option.disabled = false;
-                }
-            });
+                updateAdminDashboard(data);
+            } catch (error) {
+                console.error("Errore nel recupero dati RSVP:", error);
+            }
+        }
 
-            updateAdminDashboard(data);
-        });
-
-        // SUONO AL CAMBIO SELEZIONE
+        // Carica i dati all'avvio
+        fetchRsvps();
         nameSelect.addEventListener('change', () => playPopSound(659.25));
 
-        // --- 8. INVIO FORM ---
+        // --- 7. INVIO FORM A SHEETDB ---
         const rsvpForm = document.getElementById('rsvpForm');
         const submitBtn = document.getElementById('submitBtn');
         const successMsg = document.getElementById('successMsg');
 
-        rsvpForm.addEventListener('submit', (e) => {
+        rsvpForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const selectedName = nameSelect.value;
@@ -1236,28 +1210,44 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Invio in corso...';
 
-            rsvpsRef.child(selectedName).set({
-                status: status,
-                note: note,
-                timestamp: new Date().toISOString()
-            }).then(() => {
-                playPopSound(1046.50); // High Note C6
-                confetti({
-                    particleCount: 150,
-                    spread: 100,
-                    origin: { y: 0.5 }
+            const payload = {
+                data: [
+                    {
+                        name: selectedName,
+                        status: status,
+                        note: note,
+                        timestamp: new Date().toISOString()
+                    }
+                ]
+            };
+
+            try {
+                const response = await fetch(SHEETDB_RSVP_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
                 });
 
-                rsvpForm.style.display = 'none';
-                successMsg.style.display = 'block';
-            }).catch((err) => {
+                if (response.ok) {
+                    playPopSound(1046.50);
+                    confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
+                    rsvpForm.style.display = 'none';
+                    successMsg.style.display = 'block';
+                    fetchRsvps(); // Aggiorna la lista e disabilita il nome scelto
+                } else {
+                    throw new Error("Errore nella risposta del server");
+                }
+            } catch (err) {
                 alert("Errore nell'invio della risposta. Riprova!");
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Invia Risposta';
-            });
+            }
         });
 
-        // --- 9. AREA RISERVATA FESTEGGIATO ---
+        // --- 8. AREA RISERVATA FESTEGGIATO ---
         const toggleAdminBtn = document.getElementById('toggleAdminBtn');
         const adminPanel = document.getElementById('adminPanel');
         let isAdminUnlocked = false;
@@ -1274,6 +1264,7 @@
                 isAdminUnlocked = true;
                 adminPanel.style.display = 'block';
                 toggleAdminBtn.innerHTML = '<i class="fa-solid fa-unlock"></i> Area Riservata (Sbloccata)';
+                fetchRsvps();
             } else if (pass !== null) {
                 alert("Password errata!");
             }
@@ -1284,31 +1275,34 @@
             const guestListContainer = document.getElementById('guestListContainer');
             guestListContainer.innerHTML = '';
 
-            const entries = Object.entries(data);
-
-            if (entries.length === 0) {
+            if (!data || data.length === 0) {
                 guestListContainer.innerHTML = '<li style="text-align:center; font-size:0.85rem; color:#888;">Nessuna risposta ricevuta finora.</li>';
+                return;
             }
 
-            entries.forEach(([name, info]) => {
-                if (info.status === 'SI') yes++;
-                if (info.status === 'FORSE') maybe++;
-                if (info.status === 'NO') no++;
+            data.forEach((row) => {
+                const name = row.name || row.Name || row.NOME || row.nome || 'Ospite';
+                const status = row.status || row.Status || row.STATO || 'SI';
+                const note = row.note || row.Note || row.NOTE || '';
+
+                if (status === 'SI') yes++;
+                else if (status === 'FORSE') maybe++;
+                else if (status === 'NO') no++;
 
                 const li = document.createElement('li');
                 li.className = 'guest-item';
 
                 let badgeClass = 'badge-yes';
-                if (info.status === 'FORSE') badgeClass = 'badge-maybe';
-                if (info.status === 'NO') badgeClass = 'badge-no';
+                if (status === 'FORSE') badgeClass = 'badge-maybe';
+                if (status === 'NO') badgeClass = 'badge-no';
 
                 li.innerHTML = `
-          <div class="guest-info">
-            <span class="guest-name">${name}</span>
-            ${info.note ? `<span class="guest-msg">"${info.note}"</span>` : ''}
-          </div>
-          <span class="badge-status ${badgeClass}">${info.status}</span>
-        `;
+                  <div class="guest-info">
+                    <span class="guest-name">${name}</span>
+                    ${note ? `<span class="guest-msg">"${note}"</span>` : ''}
+                  </div>
+                  <span class="badge-status ${badgeClass}">${status}</span>
+                `;
                 guestListContainer.appendChild(li);
             });
 
