@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scegli la tua Pizza - Pizza Percoto 🍕</title>
+
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Firebase App & Database -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #070611;
+            --card-bg: rgba(20, 18, 38, 0.75);
+            --card-border: rgba(255, 255, 255, 0.18);
+            --accent-purple: #8a2be2;
+            --accent-pink: #ff007f;
+            --accent-cyan: #00f0ff;
+            --accent-gold: #ffd700;
+            --text-main: #ffffff;
+            --text-muted: #a0a5c0;
+            --yes-color: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            overflow-x: hidden;
+            padding: 20px 15px 60px 15px;
+            position: relative;
+        }
+
+        /* INTRO OVERLAY PER PIZZA */
+        #introOverlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: radial-gradient(circle at center, #2e1800 0%, #05040a 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            transition: opacity 0.9s cubic-bezier(0.77, 0, 0.175, 1), transform 0.9s cubic-bezier(0.77, 0, 0.175, 1), filter 0.9s ease;
+        }
+
+        #introOverlay.fade-out {
+            opacity: 0;
+            transform: scale(1.15);
+            filter: blur(15px);
+            pointer-events: none;
+        }
+
+        .intro-glow-bg {
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, rgba(255, 140, 0, 0.2) 60%, transparent 100%);
+            filter: blur(50px);
+            animation: pulseGlow 3s infinite alternate ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes pulseGlow {
+            0% {
+                transform: scale(0.9);
+                opacity: 0.6;
+            }
+
+            100% {
+                transform: scale(1.3);
+                opacity: 0.9;
+            }
+        }
+
+        .intro-badge {
+            font-size: 0.9rem;
+            font-weight: 800;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+            animation: fadeInDown 1s ease forwards;
+        }
+
+        .intro-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3.2rem;
+            font-weight: 900;
+            line-height: 1.1;
+            background: linear-gradient(135deg, #ffffff 0%, var(--accent-gold) 50%, #ff8c00 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+            text-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+            animation: zoomIn 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .intro-subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-bottom: 35px;
+            max-width: 400px;
+            animation: fadeInUp 1s ease 0.3s forwards;
+            opacity: 0;
+        }
+
+        .btn-open-invite {
+            position: relative;
+            padding: 18px 42px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(135deg, var(--accent-gold) 0%, #ff8c00 100%);
+            color: #000;
+            font-size: 1.25rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: fadeInUp 1s ease 0.5s forwards, pulseButton 2s infinite ease-in-out 1.5s;
+            opacity: 0;
+        }
+
+        .btn-open-invite:hover {
+            transform: scale(1.08) translateY(-3px);
+            box-shadow: 0 0 45px rgba(255, 215, 0, 0.9);
+        }
+
+        @keyframes pulseButton {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.04);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* SFONDI E PARTICELLE */
+        #bgCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .bg-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(150px);
+            z-index: 1;
+            opacity: 0.5;
+            pointer-events: none;
+            animation: floatGlow 12s infinite alternate ease-in-out;
+        }
+
+        .glow-1 {
+            top: -120px;
+            left: -120px;
+            background: #ff8c00;
+        }
+
+        .glow-2 {
+            bottom: -120px;
+            right: -120px;
+            background: var(--accent-gold);
+            animation-delay: -6s;
+        }
+
+        @keyframes floatGlow {
+            0% {
+                transform: scale(1) translate(0, 0);
+            }
+
+            100% {
+                transform: scale(1.3) translate(40px, -40px);
+            }
+        }
+
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #fff;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            z-index: 10;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 1s ease 0.3s, transform 1s ease 0.3s;
+        }
+
+        .container.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--card-border);
+            border-radius: 30px;
+            padding: 32px 26px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .back-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-nav:hover {
+            transform: translateX(-5px);
+            color: #fff;
+        }
+
+        .pizza-box-icon {
+            width: 85px;
+            height: 85px;
+            margin: 0 auto 15px auto;
+            background: linear-gradient(135deg, var(--accent-gold), #ff8c00);
+            border-radius: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.8rem;
+            color: #000;
+            box-shadow: 0 12px 35px rgba(255, 215, 0, 0.5);
+            animation: giftPulse 2.5s infinite alternate ease-in-out;
+        }
+
+        @keyframes giftPulse {
+            0% {
+                transform: translateY(0) scale(1);
+            }
+
+            100% {
+                transform: translateY(-8px) scale(1.06);
+            }
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.7rem;
+            font-weight: 900;
+            line-height: 1.15;
+            background: linear-gradient(135deg, #ffffff 0%, var(--accent-gold) 60%, #ff8c00 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin-bottom: 25px;
+        }
+
+        /* FORM & INPUTS */
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #d1d5db;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        select,
+        textarea,
+        input[type="text"] {
+            width: 100%;
+            padding: 15px 18px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        select:focus,
+        textarea:focus,
+        input[type="text"]:focus {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        }
+
+        select option {
+            background: #16142a;
+            color: #fff;
+        }
+
+        select option:disabled {
+            color: #888888;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 18px;
+            background: linear-gradient(135deg, var(--accent-gold) 0%, #ff8c00 100%);
+            color: #000;
+            font-size: 1.15rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.4);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(255, 215, 0, 0.7);
+        }
+
+        .success-box {
+            display: none;
+            padding: 22px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--yes-color);
+            border-radius: 18px;
+            color: #fff;
+            margin-top: 15px;
+        }
+
+        /* AREA RISERVATA RIEPILOGO PIZZE */
+        .admin-toggle-btn {
+            background: transparent;
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            color: var(--text-muted);
+            padding: 12px;
+            border-radius: 14px;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .admin-panel {
+            display: none;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
+        }
+
+        .pizza-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .pizza-item {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        @media (max-width: 480px) {
+            .intro-title {
+                font-size: 2.4rem;
+            }
+
+            h1 {
+                font-size: 2.1rem;
+            }
+
+            .glass-card {
+                padding: 24px 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- INTRO SCREEN -->
+    <div id="introOverlay">
+        <div class="intro-glow-bg"></div>
+        <div class="intro-badge"><i class="fa-solid fa-pizza-slice"></i> Pizza Percoto</div>
+        <div class="intro-title">Scegli la tua Pizza</div>
+        <div class="intro-subtitle">Seleziona il tuo gusto preferito per la cena del 4 Ottobre!</div>
+        <button class="btn-open-invite" id="openInviteBtn">
+            <span>Scegli la Pizza</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </button>
+    </div>
+
+    <canvas id="bgCanvas"></canvas>
+    <div class="bg-glow glow-1"></div>
+    <div class="bg-glow glow-2"></div>
+
+    <button class="sound-toggle" id="soundToggle" title="Attiva/Disattiva Suono">
+        <i class="fa-solid fa-volume-xmark" id="soundIcon"></i>
+    </button>
+
+    <div class="container" id="mainContainer">
+
+        <div class="glass-card">
+            <!-- TORNA ALL'INVITO -->
+            <a href="index.html" class="back-nav">
+                <i class="fa-solid fa-arrow-left"></i> Torna all'Invito Principale
+            </a>
+
+            <div class="pizza-box-icon">
+                <i class="fa-solid fa-pizza-slice"></i>
+            </div>
+
+            <h1>Pizza Percoto</h1>
+            <p class="subtitle">Scegli cosa vuoi mangiare per la serata da Alessio!</p>
+
+            <form id="pizzaForm">
+                <!-- SELEZIONE NOME ESCLUSIVA -->
+                <div class="form-group">
+                    <label for="nameSelect"><i class="fa-solid fa-user"></i> Chi sei?</label>
+                    <select id="nameSelect" required>
+                        <option value="" disabled selected>-- Seleziona il tuo Nome --</option>
+                        <option value="Matteo">Matteo</option>
+                        <option value="Andrea">Andrea</option>
+                        <option value="Thomas">Thomas</option>
+                        <option value="Jacopo">Jacopo</option>
+                        <option value="Alessandro">Alessandro</option>
+                        <option value="Mirko">Mirko</option>
+                    </select>
+                </div>
+
+                <!-- SELEZIONE PIZZA -->
+                <div class="form-group">
+                    <label for="pizzaSelect"><i class="fa-solid fa-pizza-slice"></i> Quale Pizza vuoi?</label>
+                    <select id="pizzaSelect" required>
+                        <option value="" disabled selected>-- Scegli una Pizza dal Menu --</option>
+                        <option value="Margherita">Margherita (Pomodoro, Mozzarella)</option>
+                        <option value="Diavola">Diavola (Pomodoro, Mozzarella, Salame Piccante)</option>
+                        <option value="Prosciutto e Funghi">Prosciutto e Funghi</option>
+                        <option value="4 Formaggi">4 Formaggi</option>
+                        <option value="Capricciosa">Capricciosa</option>
+                        <option value="Viennese">Viennese (Wuerstel)</option>
+                        <option value="Patatosa">Patatosa (Wuerstel e Patatine)</option>
+                        <option value="Bufalina">Bufalina (Mozzarella di Bufala, Basilico)</option>
+                        <option value="Custom">Altra Pizza / Gusto Personalizzato</option>
+                    </select>
+                </div>
+
+                <!-- CAMPO PER PIZZA PERSONALIZZATA -->
+                <div class="form-group" id="customPizzaGroup" style="display: none;">
+                    <label for="customPizzaInput"><i class="fa-solid fa-pen"></i> Specifica la Pizza o Modifiche:</label>
+                    <input type="text" id="customPizzaInput" placeholder="Es. Margherita senza origano, Tonno e Cipolla...">
+                </div>
+
+                <!-- INGREDIENTI EXTRA O NOTE -->
+                <div class="form-group">
+                    <label for="pizzaNotes"><i class="fa-solid fa-asterisk"></i> Modifiche o Note (opzionale)</label>
+                    <textarea id="pizzaNotes" rows="2" placeholder="Es. Senza mozzarella, aggiungi patatine, ben cotta..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <i class="fa-solid fa-check"></i> Conferma Scelta Pizza
+                </button>
+            </form>
+
+            <div class="success-box" id="successMsg">
+                <i class="fa-solid fa-circle-check" style="font-size: 2.2rem; color: var(--yes-color); margin-bottom: 8px;"></i>
+                <h3 style="font-size: 1.3rem; font-weight:800; color:#fff;">Gusto Pizza Salvato!</h3>
+                <p style="font-size: 0.95rem; margin-top: 4px; color: #d1d5db;">La tua ordinazione è stata registrata per Alessio!</p>
+                <a href="index.html" class="back-nav" style="margin-top:15px; display:inline-block;">
+                    <i class="fa-solid fa-house"></i> Torna all'Invito
+                </a>
+            </div>
+        </div>
+
+        <!-- RIEPILOGO ORDINAZIONI PER ALESSIO -->
+        <div class="glass-card">
+            <button class="admin-toggle-btn" id="toggleAdminBtn">
+                <i class="fa-solid fa-lock"></i> Riepilogo Pizze da Ordinare (Solo Alessio)
+            </button>
+
+            <div class="admin-panel" id="adminPanel">
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <h3 style="font-size: 1.1rem; font-weight:700;">Totale Ordinazione Pizza Percoto</h3>
+                </div>
+
+                <ul class="pizza-list" id="pizzaListContainer">
+                    <li style="text-align:center; font-size:0.85rem; color:#888;">Caricamento ordini...</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let soundEnabled = true;
+        const soundToggle = document.getElementById('soundToggle');
+        const soundIcon = document.getElementById('soundIcon');
+
+        function updateSoundIcon() {
+            if (soundEnabled) {
+                soundIcon.className = 'fa-solid fa-volume-high';
+                soundToggle.style.borderColor = 'var(--accent-gold)';
+            } else {
+                soundIcon.className = 'fa-solid fa-volume-xmark';
+                soundToggle.style.borderColor = 'rgba(255,255,255,0.2)';
+            }
+        }
+
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            updateSoundIcon();
+            if (soundEnabled) playPopSound(587.33);
+        });
+
+        function playPopSound(freq = 440) {
+            if (!soundEnabled) return;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                const actx = new AudioCtx();
+                const osc = actx.createOscillator();
+                const gain = actx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, actx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(freq * 1.5, actx.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.2, actx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.12);
+                osc.connect(gain); gain.connect(actx.destination);
+                osc.start(); osc.stop(actx.currentTime + 0.12);
+            } catch (e) { }
+        }
+
+        // INTRO ANIMATION
+        const introOverlay = document.getElementById('introOverlay');
+        const openInviteBtn = document.getElementById('openInviteBtn');
+        const mainContainer = document.getElementById('mainContainer');
+
+        openInviteBtn.addEventListener('click', () => {
+            soundEnabled = true;
+            updateSoundIcon();
+            playPopSound(880);
+            confetti({ particleCount: 140, spread: 90, origin: { y: 0.5 } });
+            introOverlay.classList.add('fade-out');
+            setTimeout(() => {
+                introOverlay.style.display = 'none';
+                mainContainer.classList.add('visible');
+            }, 850);
+        });
+
+        // PARTICELLE SFONDO
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2.5 + 1;
+                this.speedX = (Math.random() - 0.5) * 0.8;
+                this.speedY = (Math.random() - 0.5) * 0.8;
+                this.color = Math.random() > 0.5 ? '#ffd700' : '#ff8c00';
+            }
+            update() {
+                this.x += this.speedX; this.y += this.speedY;
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            }
+            draw() {
+                ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
+            }
+        }
+        for (let i = 0; i < 50; i++) particles.push(new Particle());
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // MOSTRAMO CAMPO PERSONALIZZATO SE "CUSTOM"
+        const pizzaSelect = document.getElementById('pizzaSelect');
+        const customPizzaGroup = document.getElementById('customPizzaGroup');
+
+        pizzaSelect.addEventListener('change', () => {
+            playPopSound(600);
+            if (pizzaSelect.value === 'Custom') {
+                customPizzaGroup.style.display = 'block';
+            } else {
+                customPizzaGroup.style.display = 'none';
+            }
+        });
+
+        // FIREBASE
+        const firebaseConfig = { databaseURL: "https://birthday-4october-default-rtdb.europe-west1.firebasedatabase.app" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // ESCLUSIONE NOMI GIA SELEZIONATI PER LA PIZZA
+        const nameSelect = document.getElementById('nameSelect');
+        const pizzaOrdersRef = db.ref('pizzas');
+
+        pizzaOrdersRef.on('value', (snapshot) => {
+            const data = snapshot.val() || {};
+            const takenNames = Object.keys(data);
+
+            Array.from(nameSelect.options).forEach(option => {
+                if (!option.value) return;
+                if (takenNames.includes(option.value)) {
+                    option.textContent = `${option.value} (Pizza già scelta)`;
+                    option.disabled = true;
+                } else {
+                    option.textContent = option.value;
+                    option.disabled = false;
+                }
+            });
+
+            updatePizzaSummary(data);
+        });
+
+        nameSelect.addEventListener('change', () => playPopSound(659.25));
+
+        // SALVATAGGIO SCELTA PIZZA
+        const pizzaForm = document.getElementById('pizzaForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const successMsg = document.getElementById('successMsg');
+
+        pizzaForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const selectedName = nameSelect.value;
+            let pizzaGusto = pizzaSelect.value;
+            const customInput = document.getElementById('customPizzaInput').value.trim();
+            const notes = document.getElementById('pizzaNotes').value.trim();
+
+            if (!selectedName) {
+                alert("Seleziona prima il tuo nome!");
+                return;
+            }
+
+            if (pizzaGusto === 'Custom') {
+                if (!customInput) {
+                    alert("Inserisci il nome del gusto della pizza personalizzata!");
+                    return;
+                }
+                pizzaGusto = customInput;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvataggio...';
+
+            pizzaOrdersRef.child(selectedName).set({
+                pizza: pizzaGusto,
+                notes: notes,
+                timestamp: new Date().toISOString()
+            }).then(() => {
+                playPopSound(1046.50);
+                confetti({ particleCount: 160, spread: 100, origin: { y: 0.5 } });
+                pizzaForm.style.display = 'none';
+                successMsg.style.display = 'block';
+            }).catch(() => {
+                alert("Errore durante il salvataggio!");
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> Conferma Scelta Pizza';
+            });
+        });
+
+        // AREA RISERVATA ALESSIO
+        const toggleAdminBtn = document.getElementById('toggleAdminBtn');
+        const adminPanel = document.getElementById('adminPanel');
+        let isAdminUnlocked = false;
+
+        toggleAdminBtn.addEventListener('click', () => {
+            playPopSound(440);
+            if (isAdminUnlocked) {
+                adminPanel.style.display = adminPanel.style.display === 'none' ? 'block' : 'none';
+                return;
+            }
+            const pass = prompt("Inserisci la password dell'organizzatore:");
+            if (pass === 'alessio2026') {
+                isAdminUnlocked = true;
+                adminPanel.style.display = 'block';
+                toggleAdminBtn.innerHTML = '<i class="fa-solid fa-unlock"></i> Riepilogo Pizze (Sbloccato)';
+            } else if (pass !== null) {
+                alert("Password errata!");
+            }
+        });
+
+        function updatePizzaSummary(data) {
+            const pizzaListContainer = document.getElementById('pizzaListContainer');
+            pizzaListContainer.innerHTML = '';
+            const entries = Object.entries(data);
+
+            if (entries.length === 0) {
+                pizzaListContainer.innerHTML = '<li style="text-align:center; font-size:0.85rem; color:#888;">Nessun gusto scelto finora.</li>';
+                return;
+            }
+
+            entries.forEach(([name, info]) => {
+                const li = document.createElement('li');
+                li.className = 'pizza-item';
+                li.innerHTML = `
+          <div style="display:flex; flex-direction:column;">
+            <span style="font-weight:700; color:#fff;">${name}</span>
+            <span style="font-size:0.9rem; color:var(--accent-gold); font-weight:800;">${info.pizza}</span>
+            ${info.notes ? `<span style="font-size:0.85rem; color:var(--text-muted); font-style:italic;">Note: "${info.notes}"</span>` : ''}
+          </div>
+          <i class="fa-solid fa-pizza-slice" style="color:var(--accent-gold); font-size:1.3rem;"></i>
+        `;
+                pizzaListContainer.appendChild(li);
+            });
+        }
+    </script>
+</body>
+
+</html>

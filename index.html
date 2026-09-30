@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Festa di Compleanno Alessio - 4 Ottobre 🎉</title>
+
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Firebase App & Database -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0a0915;
+            --card-bg: rgba(22, 20, 42, 0.7);
+            --card-border: rgba(255, 255, 255, 0.15);
+            --accent-purple: #7000ff;
+            --accent-pink: #ff007f;
+            --accent-cyan: #00f0ff;
+            --text-main: #ffffff;
+            --text-muted: #a0a5c0;
+            --yes-color: #10b981;
+            --maybe-color: #f59e0b;
+            --no-color: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            overflow-x: hidden;
+            padding: 20px 15px 60px 15px;
+            position: relative;
+        }
+
+        /* SCREEN DI INGRESSO (INTRO ANIMATION) */
+        #introScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #06050e;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            transition: opacity 0.8s ease, transform 0.8s ease, visibility 0.8s;
+        }
+
+        #introScreen.fade-out {
+            opacity: 0;
+            transform: scale(1.1);
+            pointer-events: none;
+            visibility: hidden;
+        }
+
+        .intro-gift-box {
+            width: 110px;
+            height: 110px;
+            background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            color: #fff;
+            box-shadow: 0 0 50px rgba(255, 0, 127, 0.6);
+            cursor: pointer;
+            animation: pulseIntroGift 2s infinite ease-in-out;
+            transition: transform 0.4s ease;
+            margin-bottom: 25px;
+        }
+
+        .intro-gift-box:hover {
+            transform: scale(1.15) rotate(5deg);
+        }
+
+        @keyframes pulseIntroGift {
+
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 40px rgba(255, 0, 127, 0.5);
+            }
+
+            50% {
+                transform: scale(1.08);
+                box-shadow: 0 0 70px rgba(0, 240, 255, 0.8);
+            }
+        }
+
+        .intro-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #ffffff 0%, #d8b4fe 50%, var(--accent-pink) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .intro-subtitle {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            margin-bottom: 30px;
+        }
+
+        .btn-open-invite {
+            padding: 16px 36px;
+            background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(255, 0, 127, 0.5);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-open-invite:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(255, 0, 127, 0.8);
+        }
+
+        /* CANVAS PARTICELLE DI SFONDO */
+        #bgCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* SFONDO DINAMICO GLOW ANIMATO */
+        .bg-glow {
+            position: fixed;
+            width: 550px;
+            height: 550px;
+            border-radius: 50%;
+            filter: blur(140px);
+            z-index: 1;
+            opacity: 0.5;
+            pointer-events: none;
+            animation: floatGlow 12s infinite alternate ease-in-out;
+        }
+
+        .glow-1 {
+            top: -100px;
+            left: -100px;
+            background: var(--accent-purple);
+        }
+
+        .glow-2 {
+            bottom: -100px;
+            right: -100px;
+            background: var(--accent-pink);
+            animation-delay: -6s;
+        }
+
+        .glow-3 {
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--accent-cyan);
+            opacity: 0.25;
+        }
+
+        @keyframes floatGlow {
+            0% {
+                transform: scale(1) translate(0, 0);
+            }
+
+            100% {
+                transform: scale(1.25) translate(40px, -40px);
+            }
+        }
+
+        /* PULSANTE AUDIO CONTROLS */
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(112, 0, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .sound-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(255, 0, 127, 0.5);
+        }
+
+        /* CONTENITORE PRINCIPALE */
+        .container {
+            width: 100%;
+            max-width: 650px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            z-index: 10;
+        }
+
+        /* SCHEDE GLASSMORPHISM ANIMATE */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--card-border);
+            border-radius: 28px;
+            padding: 30px 25px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            animation: cardAppear 0.8s ease-out forwards;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 0, 127, 0.4);
+        }
+
+        @keyframes cardAppear {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* REGALO 3D INTERATTIVO */
+        .gift-section {
+            perspective: 1000px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .gift-box {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            box-shadow: 0 10px 30px rgba(255, 0, 127, 0.5);
+            animation: giftPulse 2s infinite alternate ease-in-out;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .gift-section:hover .gift-box {
+            transform: rotateY(180deg) scale(1.15);
+        }
+
+        @keyframes giftPulse {
+            0% {
+                transform: translateY(0) scale(1);
+                box-shadow: 0 10px 30px rgba(255, 0, 127, 0.4);
+            }
+
+            100% {
+                transform: translateY(-8px) scale(1.05);
+                box-shadow: 0 20px 40px rgba(0, 240, 255, 0.6);
+            }
+        }
+
+        /* HEADER HERO */
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 0, 127, 0.15);
+            border: 1px solid rgba(255, 0, 127, 0.3);
+            color: var(--accent-pink);
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            animation: pulseBadge 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseBadge {
+
+            0%,
+            100% {
+                opacity: 0.9;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.04);
+            }
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.8rem;
+            font-weight: 900;
+            line-height: 1.15;
+            background: linear-gradient(135deg, #ffffff 0%, #d8b4fe 50%, var(--accent-pink) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .date-tag {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        /* COUNTDOWN ANIMATO */
+        .countdown-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .time-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 12px 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.3s ease;
+        }
+
+        .time-box:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-cyan);
+        }
+
+        .time-box .num {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .time-box .label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+
+        /* PROGRAMMA CON ICONE ANIMATE */
+        .program-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            text-align: left;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 18px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .program-step:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(5px);
+            border-color: var(--accent-pink);
+        }
+
+        .step-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: #fff;
+            flex-shrink: 0;
+            box-shadow: 0 8px 20px rgba(255, 0, 127, 0.3);
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .step-content p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .btn-map {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 10px 16px;
+            background: rgba(0, 240, 255, 0.15);
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-map:hover {
+            background: var(--accent-cyan);
+            color: #000;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+            transform: scale(1.03);
+        }
+
+        /* PULSANTE GUSTI PIZZA GOLDEN */
+        .btn-pizza-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 16px 18px;
+            background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+            color: #000;
+            border-radius: 16px;
+            font-size: 0.95rem;
+            font-weight: 800;
+            text-decoration: none;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn-pizza-link:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.7);
+        }
+
+        /* FORM RSVP */
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .section-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #d1d5db;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select,
+        textarea {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        select:focus,
+        textarea:focus {
+            border-color: var(--accent-pink);
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        select option {
+            background: #16142a;
+            color: #fff;
+            padding: 10px;
+        }
+
+        select option:disabled {
+            color: #888888;
+        }
+
+        /* SCELTA STATO (SI, FORSE, NO) */
+        .status-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .radio-card {
+            position: relative;
+        }
+
+        .radio-card input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .radio-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 14px 10px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .radio-label i {
+            font-size: 1.3rem;
+        }
+
+        .radio-card input:checked+.label-yes {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: var(--yes-color);
+            color: var(--yes-color);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .radio-card input:checked+.label-maybe {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: var(--maybe-color);
+            color: var(--maybe-color);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+
+        .radio-card input:checked+.label-no {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--no-color);
+            color: var(--no-color);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+        }
+
+        /* BOTTONI CON EFFETTO LUMINOSO */
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--accent-pink) 0%, var(--accent-purple) 100%);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(255, 0, 127, 0.35);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(255, 0, 127, 0.6);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* AREA RISERVATA ORGANIZZATORE */
+        .admin-toggle-btn {
+            background: transparent;
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            color: var(--text-muted);
+            padding: 12px;
+            border-radius: 14px;
+            width: 100%;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .admin-toggle-btn:hover {
+            border-color: var(--accent-cyan);
+            color: #fff;
+        }
+
+        .admin-panel {
+            display: none;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
+        }
+
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .stat-box {
+            text-align: center;
+            padding: 12px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .stat-box.yes {
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--yes-color);
+        }
+
+        .stat-box.maybe {
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: var(--maybe-color);
+        }
+
+        .stat-box.no {
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--no-color);
+        }
+
+        .stat-num {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .stat-lbl {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .guest-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .guest-item {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .guest-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .guest-name {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .guest-msg {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 3px;
+            font-style: italic;
+        }
+
+        .badge-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .badge-yes {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--yes-color);
+        }
+
+        .badge-maybe {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--maybe-color);
+        }
+
+        .badge-no {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--no-color);
+        }
+
+        .success-box {
+            display: none;
+            padding: 20px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--yes-color);
+            border-radius: 16px;
+            color: #fff;
+            margin-top: 15px;
+            animation: cardAppear 0.5s ease-out;
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+
+            .countdown-grid {
+                gap: 6px;
+            }
+
+            .time-box .num {
+                font-size: 1.4rem;
+            }
+
+            .glass-card {
+                padding: 22px 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ANIMAZIONE/SCHERMATA DI ENTRATA INTRO -->
+    <div id="introScreen">
+        <div class="intro-gift-box" id="introGiftTrigger">
+            <i class="fa-solid fa-gift"></i>
+        </div>
+        <div class="intro-title">Hai un invito speciale! 🎉</div>
+        <p class="intro-subtitle">Sei stato invitato alla festa di compleanno di Alessio</p>
+        <button class="btn-open-invite" id="openInviteBtn">
+            <span>Apri L'Invito</span> <i class="fa-solid fa-arrow-right"></i>
+        </button>
+    </div>
+
+    <!-- CANVAS PARTICELLE -->
+    <canvas id="bgCanvas"></canvas>
+
+    <!-- ELEMENTI SFONDO DICROICO -->
+    <div class="bg-glow glow-1"></div>
+    <div class="bg-glow glow-2"></div>
+    <div class="bg-glow glow-3"></div>
+
+    <!-- PULSANTE SUONO -->
+    <button class="sound-toggle" id="soundToggle" title="Attiva/Disattiva Suono">
+        <i class="fa-solid fa-volume-xmark" id="soundIcon"></i>
+    </button>
+
+    <div class="container">
+
+        <!-- HERO / INTRO CON REGALO 3D -->
+        <div class="glass-card">
+            <div class="gift-section" id="giftBoxTrigger">
+                <div class="gift-box">
+                    <i class="fa-solid fa-gift"></i>
+                </div>
+            </div>
+
+            <div class="hero-badge">
+                <i class="fa-solid fa-cake-candles"></i> Vi invito a festeggiare
+            </div>
+            <h1>Il Mio Compleanno!</h1>
+            <div class="date-tag">
+                <i class="fa-regular fa-calendar-days"></i> Sabato, 4 Ottobre
+            </div>
+
+            <!-- COUNTDOWN -->
+            <div class="countdown-grid" id="countdown">
+                <div class="time-box">
+                    <span class="num" id="days">00</span>
+                    <span class="label">Giorni</span>
+                </div>
+                <div class="time-box">
+                    <span class="num" id="hours">00</span>
+                    <span class="label">Ore</span>
+                </div>
+                <div class="time-box">
+                    <span class="num" id="minutes">00</span>
+                    <span class="label">Minuti</span>
+                </div>
+                <div class="time-box">
+                    <span class="num" id="seconds">00</span>
+                    <span class="label">Secondi</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROGRAMMA FESTA -->
+        <div class="glass-card">
+            <div class="section-title">Programma della Serata</div>
+            <div class="section-desc">Ecco come festeggeremo insieme il 4 ottobre!</div>
+
+            <!-- TAPPA 1: PIZZA -->
+            <div class="program-step">
+                <div class="step-icon">
+                    <i class="fa-solid fa-pizza-slice"></i>
+                </div>
+                <div class="step-content">
+                    <h3>Ore 19:30 — Pizza a Casa Mia</h3>
+                    <p>Via Aquileia, 53, 33050 Percoto UD</p>
+                    <button class="btn-map" onclick="openNavigation()">
+                        <i class="fa-solid fa-location-arrow"></i> Naviga verso Casa mia
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAPPA 2: GIOSTRE -->
+            <div class="program-step">
+                <div class="step-icon">
+                    <i class="fa-solid fa-ticket"></i>
+                </div>
+                <div class="step-content">
+                    <h3>A seguire — Giostre a Palmanova</h3>
+                    <p>Ci spostiamo tutti insieme a Palmanova per divertirci alle giostre!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- FORM DI CONFERMA RSVP -->
+        <div class="glass-card">
+            <div class="section-title">Conferma la presenza</div>
+            <div class="section-desc">Seleziona il tuo nome e fai sapere ad Alessio se ci sarai!</div>
+
+            <form id="rsvpForm">
+                <!-- SELEZIONE NOME ESCLUSIVA -->
+                <div class="form-group">
+                    <label for="nameSelect"><i class="fa-solid fa-user"></i> Chi sei?</label>
+                    <select id="nameSelect" required>
+                        <option value="" disabled selected>-- Seleziona il tuo Nome --</option>
+                        <option value="Matteo">Matteo</option>
+                        <option value="Andrea">Andrea</option>
+                        <option value="Thomas">Thomas</option>
+                        <option value="Jacopo">Jacopo</option>
+                        <option value="Alessandro">Alessandro</option>
+                        <option value="Mirko">Mirko</option>
+                    </select>
+                </div>
+
+                <!-- RISPOSTA (SI / FORSE / NO) -->
+                <div class="form-group">
+                    <label><i class="fa-solid fa-circle-question"></i> Ci sarai?</label>
+                    <div class="status-options">
+                        <div class="radio-card">
+                            <input type="radio" id="statusYes" name="rsvpStatus" value="SI" checked>
+                            <label for="statusYes" class="radio-label label-yes">
+                                <i class="fa-solid fa-circle-check"></i> Sì
+                            </label>
+                        </div>
+                        <div class="radio-card">
+                            <input type="radio" id="statusMaybe" name="rsvpStatus" value="FORSE">
+                            <label for="statusMaybe" class="radio-label label-maybe">
+                                <i class="fa-solid fa-circle-minus"></i> Forse
+                            </label>
+                        </div>
+                        <div class="radio-card">
+                            <input type="radio" id="statusNo" name="rsvpStatus" value="NO">
+                            <label for="statusNo" class="radio-label label-no">
+                                <i class="fa-solid fa-circle-xmark"></i> No
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MESSAGGIO FACOLTATIVO -->
+                <div class="form-group">
+                    <label for="guestNote"><i class="fa-solid fa-comment-dots"></i> Messaggio per Alessio (opzionale)</label>
+                    <textarea id="guestNote" rows="2" placeholder="Scrivi un messaggio o un augurio..."></textarea>
+                </div>
+
+                <!-- BOTTONE MANDA RISPOSTA -->
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <i class="fa-solid fa-paper-plane"></i> Invia Risposta
+                </button>
+
+                <!-- PULSANTE PER LA SCELTA DELLA PIZZA (SOTTO IL TASTO MANDA RISPOSTA) -->
+                <a href="pizza.html" class="btn-pizza-link">
+                    <i class="fa-solid fa-pizza-slice"></i> SCEGLI QUI IL GUSTO DELLA TUA PIZZA <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </form>
+
+            <!-- MSG CONFERMA -->
+            <div class="success-box" id="successMsg">
+                <i class="fa-solid fa-circle-check" style="font-size: 2.2rem; color: var(--yes-color); margin-bottom: 8px;"></i>
+                <h3 style="font-size: 1.3rem; font-weight:800;">Risposta Registrata!</h3>
+                <p style="font-size: 0.95rem; margin-top: 4px; color: #d1d5db; margin-bottom: 15px;">Grazie per aver risposto! Ci vediamo il 4 ottobre 🎉</p>
+
+                <!-- MOSTRATO ANCHE DOPO L'INVIO PER FACILITÀ D'ACCESSO -->
+                <a href="pizza.html" class="btn-pizza-link">
+                    <i class="fa-solid fa-pizza-slice"></i> SCEGLI QUI IL GUSTO DELLA TUA PIZZA <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- AREA RISERVATA FESTEGGIATO -->
+        <div class="glass-card">
+            <button class="admin-toggle-btn" id="toggleAdminBtn">
+                <i class="fa-solid fa-lock"></i> Area Riservata Festeggiato (Solo Tu)
+            </button>
+
+            <div class="admin-panel" id="adminPanel">
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <h3 style="font-size: 1.1rem; font-weight:700;">Resoconto Partecipazioni</h3>
+                </div>
+
+                <div class="admin-stats">
+                    <div class="stat-box yes">
+                        <div class="stat-num" id="countYes">0</div>
+                        <div class="stat-lbl">Confermati</div>
+                    </div>
+                    <div class="stat-box maybe">
+                        <div class="stat-num" id="countMaybe">0</div>
+                        <div class="stat-lbl">In Dubbio</div>
+                    </div>
+                    <div class="stat-box no">
+                        <div class="stat-num" id="countNo">0</div>
+                        <div class="stat-lbl">Assenti</div>
+                    </div>
+                </div>
+
+                <ul class="guest-list" id="guestListContainer">
+                    <li style="text-align:center; font-size:0.85rem; color:#888;">Caricamento riepilogo...</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 1. GESTIONE ENTRATA ED ESPLOSIONE INIZIALE ---
+        const introScreen = document.getElementById('introScreen');
+        const openInviteBtn = document.getElementById('openInviteBtn');
+        const introGiftTrigger = document.getElementById('introGiftTrigger');
+
+        function triggerEntrance() {
+            playPopSound(880);
+
+            // Lancio coriandoli
+            confetti({
+                particleCount: 120,
+                spread: 80,
+                origin: { y: 0.5 }
+            });
+
+            // Sfuma lo schermo di intro
+            introScreen.classList.add('fade-out');
+        }
+
+        openInviteBtn.addEventListener('click', triggerEntrance);
+        introGiftTrigger.addEventListener('click', triggerEntrance);
+
+        // --- 2. PARTICELLE ANIMATE SU CANVAS ---
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 1;
+                this.speedX = (Math.random() - 0.5) * 0.8;
+                this.speedY = (Math.random() - 0.5) * 0.8;
+                this.color = Math.random() > 0.5 ? '#ff007f' : '#00f0ff';
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 45; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // --- 3. AUDIO SYNTH SOUND EFFECTS (WEB AUDIO API) ---
+        let soundEnabled = false;
+        const soundToggle = document.getElementById('soundToggle');
+        const soundIcon = document.getElementById('soundIcon');
+
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            if (soundEnabled) {
+                soundIcon.className = 'fa-solid fa-volume-high';
+                soundToggle.style.borderColor = 'var(--accent-pink)';
+                playPopSound(587.33); // D5 Note
+            } else {
+                soundIcon.className = 'fa-solid fa-volume-xmark';
+                soundToggle.style.borderColor = 'rgba(255,255,255,0.2)';
+            }
+        });
+
+        function playPopSound(freq = 440) {
+            if (!soundEnabled) return;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                const actx = new AudioCtx();
+                const osc = actx.createOscillator();
+                const gain = actx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, actx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(freq * 1.5, actx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.2, actx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.1);
+                osc.connect(gain);
+                gain.connect(actx.destination);
+                osc.start();
+                osc.stop(actx.currentTime + 0.1);
+            } catch (e) { }
+        }
+
+        // CLICK SUL REGALO 3D INTERNO
+        document.getElementById('giftBoxTrigger').addEventListener('click', () => {
+            playPopSound(880);
+            confetti({
+                particleCount: 100,
+                spread: 90,
+                origin: { y: 0.4 }
+            });
+        });
+
+        // --- 4. NAVIGAZIONE MAPPE ---
+        function openNavigation() {
+            playPopSound(523.25);
+            const address = "Via Aquileia, 53, 33050 Percoto UD";
+            const isAppleDevice = /Mac|iPhone|iPod|iPad/.test(navigator.userAgent);
+
+            if (isAppleDevice) {
+                window.open(`maps://maps.apple.com/?q=${encodeURIComponent(address)}`, '_blank');
+            } else {
+                window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
+            }
+        }
+
+        // --- 5. CONFIGURAZIONE FIREBASE ---
+        const firebaseConfig = {
+            databaseURL: "https://birthday-4october-default-rtdb.europe-west1.firebasedatabase.app"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        // --- 6. CONTO ALLA ROVESCIA (4 OTT) ---
+        function updateCountdown() {
+            const now = new Date();
+            let targetYear = now.getFullYear();
+            let targetDate = new Date(`October 4, ${targetYear} 19:30:00`);
+
+            if (now > targetDate) {
+                targetDate = new Date(`October 4, ${targetYear + 1} 19:30:00`);
+            }
+
+            const diff = targetDate - now;
+
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+            document.getElementById('days').innerText = String(d).padStart(2, '0');
+            document.getElementById('hours').innerText = String(h).padStart(2, '0');
+            document.getElementById('minutes').innerText = String(m).padStart(2, '0');
+            document.getElementById('seconds').innerText = String(s).padStart(2, '0');
+        }
+
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+        // --- 7. GESTIONE SELEZIONE ED ESCLUSIONE NOMI ---
+        const nameSelect = document.getElementById('nameSelect');
+        const rsvpsRef = db.ref('rsvps');
+
+        rsvpsRef.on('value', (snapshot) => {
+            const data = snapshot.val() || {};
+            const takenNames = Object.keys(data);
+
+            Array.from(nameSelect.options).forEach(option => {
+                if (!option.value) return;
+
+                if (takenNames.includes(option.value)) {
+                    option.textContent = `${option.value} (Già risposto)`;
+                    option.disabled = true;
+                } else {
+                    option.textContent = option.value;
+                    option.disabled = false;
+                }
+            });
+
+            updateAdminDashboard(data);
+        });
+
+        // SUONO AL CAMBIO SELEZIONE
+        nameSelect.addEventListener('change', () => playPopSound(659.25));
+
+        // --- 8. INVIO FORM ---
+        const rsvpForm = document.getElementById('rsvpForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const successMsg = document.getElementById('successMsg');
+
+        rsvpForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const selectedName = nameSelect.value;
+            const status = document.querySelector('input[name="rsvpStatus"]:checked').value;
+            const note = document.getElementById('guestNote').value.trim();
+
+            if (!selectedName) {
+                alert("Seleziona prima il tuo nome!");
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Invio in corso...';
+
+            rsvpsRef.child(selectedName).set({
+                status: status,
+                note: note,
+                timestamp: new Date().toISOString()
+            }).then(() => {
+                playPopSound(1046.50); // High Note C6
+                confetti({
+                    particleCount: 150,
+                    spread: 100,
+                    origin: { y: 0.5 }
+                });
+
+                rsvpForm.style.display = 'none';
+                successMsg.style.display = 'block';
+            }).catch((err) => {
+                alert("Errore nell'invio della risposta. Riprova!");
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Invia Risposta';
+            });
+        });
+
+        // --- 9. AREA RISERVATA FESTEGGIATO ---
+        const toggleAdminBtn = document.getElementById('toggleAdminBtn');
+        const adminPanel = document.getElementById('adminPanel');
+        let isAdminUnlocked = false;
+
+        toggleAdminBtn.addEventListener('click', () => {
+            playPopSound(440);
+            if (isAdminUnlocked) {
+                adminPanel.style.display = adminPanel.style.display === 'none' ? 'block' : 'none';
+                return;
+            }
+
+            const pass = prompt("Inserisci la password dell'organizzatore:");
+            if (pass === 'alessio2026') {
+                isAdminUnlocked = true;
+                adminPanel.style.display = 'block';
+                toggleAdminBtn.innerHTML = '<i class="fa-solid fa-unlock"></i> Area Riservata (Sbloccata)';
+            } else if (pass !== null) {
+                alert("Password errata!");
+            }
+        });
+
+        function updateAdminDashboard(data) {
+            let yes = 0, maybe = 0, no = 0;
+            const guestListContainer = document.getElementById('guestListContainer');
+            guestListContainer.innerHTML = '';
+
+            const entries = Object.entries(data);
+
+            if (entries.length === 0) {
+                guestListContainer.innerHTML = '<li style="text-align:center; font-size:0.85rem; color:#888;">Nessuna risposta ricevuta finora.</li>';
+            }
+
+            entries.forEach(([name, info]) => {
+                if (info.status === 'SI') yes++;
+                if (info.status === 'FORSE') maybe++;
+                if (info.status === 'NO') no++;
+
+                const li = document.createElement('li');
+                li.className = 'guest-item';
+
+                let badgeClass = 'badge-yes';
+                if (info.status === 'FORSE') badgeClass = 'badge-maybe';
+                if (info.status === 'NO') badgeClass = 'badge-no';
+
+                li.innerHTML = `
+          <div class="guest-info">
+            <span class="guest-name">${name}</span>
+            ${info.note ? `<span class="guest-msg">"${info.note}"</span>` : ''}
+          </div>
+          <span class="badge-status ${badgeClass}">${info.status}</span>
+        `;
+                guestListContainer.appendChild(li);
+            });
+
+            document.getElementById('countYes').innerText = yes;
+            document.getElementById('countMaybe').innerText = maybe;
+            document.getElementById('countNo').innerText = no;
+        }
+    </script>
+</body>
+
+</html>
